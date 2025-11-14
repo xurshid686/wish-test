@@ -1,0 +1,23 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "api/submit-test.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "TELEGRAM_BOT_TOKEN": "@telegram-bot-token",
+    "TELEGRAM_CHAT_ID": "@telegram-chat-id"
+  }
+}
