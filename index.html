@@ -249,7 +249,7 @@
                     <!-- Questions will be dynamically inserted here -->
                 </div>
                 
-                <button class="btn" onclick="submitTest()" id="submitBtn">Submit Test</button>
+                <button class="btn" onclick="submitTest()" id="submitBtn" disabled>Submit Test</button>
             </div>
 
             <!-- Results Section -->
@@ -536,6 +536,9 @@
             document.getElementById('studentInfoSection').style.display = 'none';
             document.getElementById('testSection').style.display = 'block';
 
+            // Initialize student answers array
+            studentAnswers = new Array(testData.questions.length);
+
             // Initialize questions
             const container = document.getElementById('questionsContainer');
             container.innerHTML = '';
@@ -613,7 +616,7 @@
             // Show results
             showResults(correctCount, timeString);
             
-            // Send to Telegram (in a real implementation, this would be a server call)
+            // Send to Telegram
             sendToTelegram(correctCount, timeString);
         }
 
@@ -626,6 +629,17 @@
             document.getElementById('resultTime').textContent = timeString;
             document.getElementById('finalScore').textContent = `${score}/20`;
 
+            // Set score text based on performance
+            const percentage = (score / 20) * 100;
+            let scoreText = '';
+            if (percentage >= 90) scoreText = '🎉 Excellent! Outstanding performance!';
+            else if (percentage >= 80) scoreText = '👍 Very Good! Well done!';
+            else if (percentage >= 70) scoreText = '🙂 Good job!';
+            else if (percentage >= 60) scoreText = '💪 Not bad! Keep practicing!';
+            else scoreText = '📚 Keep studying! You\'ll improve!';
+            
+            document.getElementById('scoreText').textContent = scoreText;
+
             // Generate review
             const reviewContainer = document.getElementById('reviewContainer');
             reviewContainer.innerHTML = '';
@@ -637,7 +651,7 @@
                 const reviewDiv = document.createElement('div');
                 reviewDiv.className = 'review-question';
                 reviewDiv.innerHTML = `
-                    <div class="question-number">Question ${index + 1}</div>
+                    <div class="question-number">Question ${index + 1} ${isCorrect ? '✅' : '❌'}</div>
                     <div class="question-text">${question.text}</div>
                     <div class="options">
                         ${question.options.map((option, optIndex) => {
@@ -661,32 +675,56 @@
 
         function sendToTelegram(score, timeString) {
             const studentName = document.getElementById('studentName').value.trim();
+            const percentage = Math.round((score / 20) * 100);
             
-            // In a real implementation, you would send this to your server
-            // which would then forward to Telegram via a bot
             const report = {
                 testName: testData.name,
                 studentName: studentName,
                 timeSpent: timeString,
                 score: score,
                 totalQuestions: 20,
-                percentage: Math.round((score / 20) * 100),
+                percentage: percentage,
                 timestamp: new Date().toISOString()
             };
 
-            console.log('Telegram Report:', report);
+            // In a real implementation, this would be a fetch to your server
+            console.log('Telegram Report Ready:', report);
             
-            // Example of what the server would receive:
-            fetch('/api/submit-test', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(report)
-            }).catch(error => {
-                console.log('Test submission logged (Telegram would be notified)');
-            });
+            // Simulate API call
+            simulateTelegramNotification(report);
         }
+
+        function simulateTelegramNotification(report) {
+            // This simulates what would be sent to Telegram
+            const message = `
+📚 *Test Completed - ${report.testName}*
+
+👤 *Student:* ${report.studentName}
+⏱️ *Time Spent:* ${report.timeSpent}
+📊 *Score:* ${report.score}/${report.totalQuestions} (${report.percentage}%)
+🕒 *Completed:* ${new Date(report.timestamp).toLocaleString()}
+
+${report.percentage >= 80 ? '🎉 Excellent work!' : report.percentage >= 60 ? '👍 Good job!' : '💪 Keep practicing!'}
+            `.trim();
+
+            console.log('=== TELEGRAM NOTIFICATION ===');
+            console.log(message);
+            console.log('=============================');
+            
+            // In production, this would be:
+            // fetch('/api/submit-test', {
+            //     method: 'POST',
+            //     headers: { 'Content-Type': 'application/json' },
+            //     body: JSON.stringify(report)
+            // });
+        }
+
+        // Allow Enter key to start test
+        document.getElementById('studentName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                startTest();
+            }
+        });
     </script>
 </body>
 </html>
