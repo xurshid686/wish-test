@@ -2,11 +2,8 @@
   "name": "wish-test",
   "version": "1.0.0",
   "description": "English grammar test for wish usage",
+  "type": "module",
   "scripts": {
-    "dev": "serve ."
-  },
-  "dependencies": {},
-  "devDependencies": {
-    "serve": "^14.0.0"
+    "dev": "python3 -m http.server 8000"
   }
 }
