@@ -1,0 +1,12 @@
+{
+  "name": "wish-test",
+  "version": "1.0.0",
+  "description": "English grammar test for wish usage",
+  "scripts": {
+    "dev": "serve ."
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "serve": "^14.0.0"
+  }
+}
