@@ -1,12 +1,21 @@
-const fetch = require('node-fetch');
-
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Add CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
   try {
-    const { testName, studentName, timeSpent, score, totalQuestions, percentage, timestamp } = req.body;
+    const { testName, studentName, timeSpent, score, totalQuestions, percentage, timestamp } = await req.body;
+
+    // Validate required fields
+    if (!testName || !studentName || !timeSpent || score === undefined) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
     // Telegram bot configuration
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -17,7 +26,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'Server configuration error' });
     }
 
-    // Create message
+    // Create formatted message
     const message = `
 📚 *Test Completed - ${testName}*
 
@@ -30,28 +39,42 @@ ${percentage >= 80 ? '🎉 Excellent work!' : percentage >= 60 ? '👍 Good job!
     `.trim();
 
     // Send to Telegram
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'Markdown',
-        }),
-      }
-    );
+    const telegramUrl = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    const telegramResponse = await fetch(telegramUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    const telegramData = await telegramResponse.json();
 
     if (!telegramResponse.ok) {
-      throw new Error('Failed to send Telegram message');
+      console.error('Telegram API error:', telegramData);
+      return res.status(500).json({ 
+        error: 'Failed to send Telegram message',
+        details: telegramData
+      });
     }
 
-    res.status(200).json({ success: true, message: 'Test submitted successfully' });
+    console.log('Test result sent to Telegram:', { studentName, score, timeSpent });
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Test submitted successfully',
+      telegramMessageId: telegramData.result.message_id
+    });
+
   } catch (error) {
     console.error('Error submitting test:', error);
-    res.status(500).json({ error: 'Failed to submit test' });
+    res.status(500).json({ 
+      error: 'Internal server error',
+      details: error.message 
+    });
   }
-};
+}
